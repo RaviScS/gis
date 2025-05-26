@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GIS Demo - Multiple Polygon Layers with Dropdown & Checkboxes</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- ArcGIS CSS -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+
+  <style>
+    html, body, #viewDiv {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.15);
+      min-width: 260px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="controls" class="shadow">
+    <div class="mb-3">
+      <label for="locationSelect" class="form-label">Select Location</label>
+      <select class="form-select" id="locationSelect">
+        <option value="">-- Select Location --</option>
+        <option value="andheri">Andheri</option>
+      </select>
+    </div>
+
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" value="noSchoolZone" id="chkNoSchoolZone" />
+      <label class="form-check-label" for="chkNoSchoolZone">
+        No School Zone
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" value="noHospitalZone" id="chkNoHospitalZone" />
+      <label class="form-check-label" for="chkNoHospitalZone">
+        No Hospital Zone
+      </label>
+    </div>
+
+    <button id="searchBtn" class="btn btn-primary w-100">Search</button>
+  </div>
+
+  <div id="viewDiv"></div>
+
+  <!-- Load ArcGIS API and your code with a single script -->
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GeoJSONLayer"
+    ], (Map, MapView, GeoJSONLayer) => {
+
+      const map = new Map({
+        basemap: "streets"
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [72.8567, 19.0176], // Mumbai approx
+        zoom: 11
+      });
+
+      let schoolZoneLayer = null;
+      let hospitalZoneLayer = null;
+
+      const geojsonUrls = {
+        andheri: {
+          noSchoolZone: "./school.geojson",
+          noHospitalZone: "./hospital.geojson"
+        }
+      };
+
+      const searchBtn = document.getElementById("searchBtn");
+      const locationSelect = document.getElementById("locationSelect");
+      const chkNoSchoolZone = document.getElementById("chkNoSchoolZone");
+      const chkNoHospitalZone = document.getElementById("chkNoHospitalZone");
+
+      searchBtn.addEventListener("click", () => {
+        const selectedLocation = locationSelect.value;
+
+        if (schoolZoneLayer) {
+          map.remove(schoolZoneLayer);
+          schoolZoneLayer = null;
+        }
+        if (hospitalZoneLayer) {
+          map.remove(hospitalZoneLayer);
+          hospitalZoneLayer = null;
+        }
+
+        if (!selectedLocation) {
+          alert("Please select a location.");
+          return;
+        }
+
+        const extents = [];
+
+        if (chkNoSchoolZone.checked) {
+          schoolZoneLayer = new GeoJSONLayer({
+            url: geojsonUrls[selectedLocation].noSchoolZone,
+            renderer: {
+              type: "simple",
+              symbol: {
+                type: "simple-fill",
+                color: [255, 0, 0, 0.4],
+                outline: {
+                  color: [255, 0, 0],
+                  width: 2
+                }
+              }
+            },
+            popupTemplate: {
+              title: "{zone}",
+              content: "This is a no school zone."
+            }
+          });
+          map.add(schoolZoneLayer);
+          extents.push(schoolZoneLayer.queryExtent());
+        }
+
+        if (chkNoHospitalZone.checked) {
+          hospitalZoneLayer = new GeoJSONLayer({
+            url: geojsonUrls[selectedLocation].noHospitalZone,
+            renderer: {
+              type: "simple",
+              symbol: {
+                type: "simple-fill",
+                color: [0, 0, 255, 0.4],
+                outline: {
+                  color: [0, 0, 255],
+                  width: 2
+                }
+              }
+            },
+            popupTemplate: {
+              title: "{zone}",
+              content: "This is a no hospital zone."
+            }
+          });
+          map.add(hospitalZoneLayer);
+          extents.push(hospitalZoneLayer.queryExtent());
+        }
+
+        if (extents.length === 0) {
+          view.goTo({ center: [72.8567, 19.0176], zoom: 11 });
+          return;
+        }
+
+        Promise.all(extents).then(results => {
+          let combinedExtent = results[0];
+          for (let i = 1; i < results.length; i++) {
+            combinedExtent = combinedExtent.union(results[i]);
+          }
+          view.goTo(combinedExtent.expand(1.5));
+        }).catch(() => {
+          view.goTo({ center: [72.8567, 19.0176], zoom: 11 });
+        });
+      });
+
+    });
+  </script>
+
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

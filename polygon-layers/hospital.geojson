@@ -1,0 +1,22 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": { "zone": "No Hospital Zone" },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [72.848, 19.110],
+              [72.855, 19.110],
+              [72.855, 19.120],
+              [72.848, 19.120],
+              [72.848, 19.110]
+            ]
+          ]
+        }
+      }
+    ]
+  }
+  

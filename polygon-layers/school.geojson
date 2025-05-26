@@ -1,0 +1,22 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": { "zone": "No School Zone" },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [72.8400, 19.1150],
+              [72.8500, 19.1150],
+              [72.8500, 19.1250],
+              [72.8400, 19.1250],
+              [72.8400, 19.1150]
+            ]
+          ]
+        }
+      }
+    ]
+  }
+  
